@@ -15,4 +15,4 @@ const playerSchema = new mongoose.Schema({
 });
 
 // (modelName, schema, collectionName)
-export default mongoose.model("Player", playerSchema, "characters");
+export default mongoose.model("Player", playerSchema, "players");
