@@ -1,4 +1,4 @@
-import Dictionary from '../models/Dictionary';
+import Dictionary from '../models/Dictionary.js';
 
 export const getWord = async (req, res) => {
     try {
