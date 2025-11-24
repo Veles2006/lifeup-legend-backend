@@ -12,6 +12,21 @@ export const getWord = async (req, res) => {
                 vietnamese: 'Không tìm thấy',
             });
         }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+export const searchWord = async (req, res) => {
+    try {
+        const q = req.query.q?.toLowerCase() || '';
+
+        const result = await Dictionary.find({
+            english: { $regex: `^${q}` }
+        }).limit(20);
+
         res.json(result);
     } catch (err) {
         res.status(500).json({ error: err.message });
