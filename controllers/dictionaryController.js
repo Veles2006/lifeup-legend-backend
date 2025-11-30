@@ -19,16 +19,16 @@ export const getWord = async (req, res) => {
     }
 };
 
-export const searchWord = async (req, res) => {
-    try {
-        const q = req.query.q?.toLowerCase() || '';
+// export const searchWord = async (req, res) => {
+//     try {
+//         const q = req.query.q?.toLowerCase() || '';
 
-        const result = await Dictionary.find({
-            english: { $regex: `^${q}` }
-        }).limit(20);
+//         const result = await Dictionary.find({
+//             english: { $regex: `^${q}` }
+//         }).limit(20);
 
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
+//         res.json(result);
+//     } catch (err) {
+//         res.status(500).json({ error: err.message });
+//     }
+// };
