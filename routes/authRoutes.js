@@ -7,7 +7,7 @@ import { protect } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 /**
- * POST /api/auth/register
+ * POST /auth/register
  * body: { username, email, password }
  */
 router.post("/register", async (req, res) => {
@@ -50,7 +50,7 @@ router.post("/register", async (req, res) => {
 });
 
 /**
- * POST /api/auth/login
+ * POST /auth/login
  * body: { emailOrUsername, password }
  */
 router.post("/login", async (req, res) => {
