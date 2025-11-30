@@ -1,5 +1,5 @@
 import express from 'express';
-import { getWord, searchWord } from '../controllers/dictionaryController.js';
+import { getWord } from '../controllers/dictionaryController.js';
 
 const router = express.Router();
 

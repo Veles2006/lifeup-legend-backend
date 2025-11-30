@@ -1,10 +1,10 @@
 import express from "express";
-import { getPlayers, createPlayer, getCharacters } from "../controllers/playerController.js";
+import { getUsers, createUser } from "../controllers/userController.js";
 
 const router = express.Router();
 
-router.get("/", getPlayers);
-router.post("/", createPlayer);
-router.get("/all", getCharacters);
+router.get("/", getUsers);
+router.post("/", createUser);
+// router.get("/all", getCharacters);
 
 export default router;
