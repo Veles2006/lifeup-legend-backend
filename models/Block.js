@@ -26,6 +26,7 @@ const blockScheme = new mongoose.Schema(
         type: {
             type: String,
             enum: ['permanent', 'scheduled', 'timer'],
+            default: 'permanent',
         },
         type: [{ start: String, end: String }],
         default: [],
