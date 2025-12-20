@@ -14,7 +14,8 @@ export const getAllItems = async (req, res) => {
 
 export const getItemById = async (req, res) => {
     try {
-        const item = await Item.findById(req.params.id);
+        const item = await Item.findById(req.params.id)
+            .populate('keyInfo.blockId');
 
         if (!item) {
             return res.status(404).json({ error: 'Không tìm thấy item' });
@@ -25,6 +26,7 @@ export const getItemById = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
 
 export const createItem = async (req, res) => {
     try {

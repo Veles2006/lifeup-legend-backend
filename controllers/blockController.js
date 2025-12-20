@@ -98,7 +98,7 @@ export const createBlock = async (req, res) => {
 
         res.status(201).json(block);
     } catch (err) {
-        if ((err.code = 11000)) {
+        if ((err.code === 11000)) {
             return res.status(400).json({
                 message: 'Block với packageName này đã tồn tại!',
             });
