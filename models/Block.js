@@ -14,25 +14,79 @@ import mongoose from 'mongoose';
 //     },
 // })
 
-const blockScheme = new mongoose.Schema(
+const timeRangeSchema = new mongoose.Schema(
     {
-        idUser: {
+        start: { type: String, required: true }, // "08:00"
+        end: { type: String, required: true }, // "22:00"
+    },
+    { _id: false }
+);
+
+const blockSchema = new mongoose.Schema(
+    {
+        userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            // required: true,
+        },
+
+        appName: {
+            type: String,
             required: true,
         },
-        appName: String,
-        packageName: String,
-        type: {
+
+        packageName: {
+            type: String,
+            required: true,
+        },
+
+        blockType: {
             type: String,
             enum: ['permanent', 'scheduled', 'timer'],
             default: 'permanent',
         },
-        type: [{ start: String, end: String }],
-        default: [],
-        expiresAt: Date,
+
+        // chỉ dùng cho scheduled
+        schedules: {
+            type: [timeRangeSchema],
+            default: [],
+        },
+
+        // chỉ dùng cho timer
+        expiresAt: {
+            type: Date,
+            default: null,
+        },
+
+        penaltyMinutes: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
+        isActive: {
+            type: Boolean,
+            default: true,
+        },
     },
     { timestamps: true }
 );
 
-export default mongoose.model('Block', blockScheme, 'block');
+blockSchema.pre("save", function (next) {
+    if (this.blockType === "scheduled" && this.schedules.length === 0) {
+        return next(new Error("Scheduled block must have schedules"));
+    }
+
+    if (this.blockType === "timer" && !this.expiresAt) {
+        return next(new Error("Timer block must have expiresAt"));
+    }
+
+    next();
+});
+
+blockSchema.index(
+    { useId: 1, packageName: 1},
+    { unique: true }
+)
+
+export default mongoose.model('Block', blockSchema, 'blocks');

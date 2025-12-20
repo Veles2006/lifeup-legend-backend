@@ -6,13 +6,14 @@ import {
     updateItem,
     deleteItem,
 } from '../controllers/itemController.js';
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get('/', getAllItems);
-router.get('/:id', getItemById);
-router.post('/', createItem);
-router.put('/:id', updateItem);
-router.delete('/:id', deleteItem);
+router.get('/', protect, getAllItems);
+router.get('/:id', protect, getItemById);
+router.post('/', protect, createItem);
+router.put('/:id', protect, updateItem);
+router.delete('/:id', protect, deleteItem);
 
 export default router;
