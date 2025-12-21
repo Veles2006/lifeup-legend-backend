@@ -63,7 +63,7 @@ const createKeys = async ({ userId, appName, blockId }) => {
         rank: index + 1,
         category: 'key',
         keyInfo: {
-            appId: blockId,
+            blockId: blockId,
         },
         description: `Chìa khoá mở ${appName} trong ${key.time} phút.`,
         icon: key.icon,

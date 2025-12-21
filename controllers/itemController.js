@@ -15,7 +15,7 @@ export const getAllItems = async (req, res) => {
 export const getItemById = async (req, res) => {
     try {
         const item = await Item.findById(req.params.id)
-            .populate('keyInfo.blockId');
+            .populate('keyInfo.blockId', 'appName packageName blockType');
 
         if (!item) {
             return res.status(404).json({ error: 'Không tìm thấy item' });
