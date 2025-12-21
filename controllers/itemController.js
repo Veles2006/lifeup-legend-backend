@@ -4,7 +4,10 @@ export const getAllItems = async (req, res) => {
     try {
         const userId = req.user._id;
 
-        const items = await Item.find({ userId });
+        const items = await Item.find({ userId }).populate(
+            'keyInfo.blockId',
+            'appName packageName blockType'
+        );
 
         res.json(items);
     } catch (err) {
@@ -14,8 +17,10 @@ export const getAllItems = async (req, res) => {
 
 export const getItemById = async (req, res) => {
     try {
-        const item = await Item.findById(req.params.id)
-            .populate('keyInfo.blockId', 'appName packageName blockType');
+        const item = await Item.findById(req.params.id).populate(
+            'keyInfo.blockId',
+            'appName packageName blockType'
+        );
 
         if (!item) {
             return res.status(404).json({ error: 'Không tìm thấy item' });
@@ -26,7 +31,6 @@ export const getItemById = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
-
 
 export const createItem = async (req, res) => {
     try {
