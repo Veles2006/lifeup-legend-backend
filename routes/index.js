@@ -6,6 +6,8 @@ import dictionaryRoutes from './dictionaryRoutes.js';
 import authRoutes from './authRoutes.js';
 import blockRoutes from './blockRoutes.js';
 import inventoryRoutes from './inventoryRoutes.js';
+import userPreferenceRoutes from './userPreferenceRoutes.js';
+import userScheduleRoutes from './userScheduleRoutes.js';
 
 const router = express.Router();
 
@@ -16,5 +18,7 @@ router.use('/items', itemRoutes);
 router.use('/dict', dictionaryRoutes);
 router.use('/blocks', blockRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/user-preference', userPreferenceRoutes);
+router.use('/user-schedule', userScheduleRoutes);
 
 export default router;

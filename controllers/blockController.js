@@ -24,7 +24,7 @@ const eightKeys = [
         icon: 'https://i.pinimg.com/736x/c7/bd/dd/c7bdddc4b415aea0bd0065f2b99930f7.jpg',
     },
     {
-        color: 'Violet',
+        color: 'Purple',
         time: 240,
         icon: 'https://i.pinimg.com/736x/c1/0f/0c/c10f0c18069bfe7e13ee3b1b495ff403.jpg',
     },
@@ -61,6 +61,7 @@ const createKeys = async ({ userId, appName, blockId }) => {
         userId,
         name: `${key.color} Key [ ${appName} ]`,
         rank: index + 1,
+        tier: key.color.toLocaleLowerCase(),
         category: 'key',
         keyInfo: {
             blockId: blockId,

@@ -1,19 +1,29 @@
 import Task from "../models/Task.js";
 
-export const getTasks = async (req, res) => {
+// export const getTasks = async (req, res) => {
+//     try {
+//         const allTasks = await Task.find({});
+//         res.json(allTasks);
+//     } catch (err) {
+//         res.status(500).json({ error: err.message });
+//     }
+// };
+
+export const getTasksById = async (req, res) => {
     try {
-        const allTasks = await Task.find({});
-        res.json(allTasks);
+        const userId = req.user._id
+        const allTasks = await Task.find({ userId })
+        res.json(allTasks)
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: err.message })
     }
-};
+}
 
 export const updateTaskStatus = async (req, res) => {
     try {
         const { status } = req.body;
 
-        if (!["hoàn thành", "chưa hoàn thành"].includes(status)) {
+        if (!['pending', 'in_progress', 'completed', 'failed', 'expired'].includes(status)) {
             return res.status(400).json({ error: "Trạng thái không hợp lệ" });
         }
 

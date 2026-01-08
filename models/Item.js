@@ -1,5 +1,16 @@
 import mongoose from 'mongoose';
 
+export const ITEM_TIER = [
+    'white',
+    'gray',
+    'green',
+    'blue',
+    'purple',
+    'yellow',
+    'red',
+    'black',
+];
+
 const effectSchema = new mongoose.Schema({
     type: { type: String, required: true },
     value: { type: Number, default: 0 },
@@ -15,7 +26,14 @@ const itemSchema = new mongoose.Schema({
     },
     name: { type: String, required: true },
 
-    // rank 1–10
+    tier: {
+        type: String,
+        enum: ITEM_TIER,
+        required: true,
+        index: true,
+    },
+
+    // rank 1–8
     rank: { type: Number, min: 1, max: 8, default: 1 },
 
     // loại item
