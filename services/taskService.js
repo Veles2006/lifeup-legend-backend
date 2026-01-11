@@ -2,9 +2,14 @@ import UserSchedule from '../models/UserSchedule.js';
 import Task from '../models/Task.js';
 import User from '../models/User.js';
 import { calculateDailyTaskLogic } from './taskAI.service.js';
-import { convertToUserTime, formatHHMM, formatYYYYMMDD } from '../utils/time.js';
+import {
+    convertToUserTime,
+    formatHHMM,
+    formatYYYYMMDD,
+} from '../utils/time.js';
 import { startOfToday } from '../utils/time.js';
 import { endOfToday } from '../utils/time.js';
+import { sendDailyTaskNotification } from './notificationService.js';
 
 export async function runDailyTaskCheck() {
     const now = new Date();
@@ -37,7 +42,6 @@ async function spawnDailyTask(userId, currentHHMM, userTime) {
     const taskData = await calculateDailyTaskLogic(userId);
     const dateKey = formatYYYYMMDD(userTime);
 
-
     await Task.create({
         userId,
         ...taskData,
@@ -48,6 +52,14 @@ async function spawnDailyTask(userId, currentHHMM, userTime) {
         dateKey,
         deadline: endOfToday(userTime),
         spawnTime: currentHHMM,
+    });
+
+
+    // Test
+    await sendDailyTaskNotification({
+        title: taskData.name,
+        body: taskData.description.slice(0, 120),
+        image: 'https://i.pinimg.com/1200x/88/9b/56/889b564954981b5715e70b7a0592a21f.jpg',
     });
 }
 

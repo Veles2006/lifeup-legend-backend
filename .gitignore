@@ -36,3 +36,5 @@ coverage/
 *.local
 *.env.development
 *.env.production
+
+firebase-admin.json
