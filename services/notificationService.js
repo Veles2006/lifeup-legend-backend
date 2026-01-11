@@ -1,6 +1,6 @@
 import admin from '../config/firebase.js';
 
-export async function sendDailyTaskNotification({ title, body }) {
+export async function sendDailyTaskNotification({ title, body, image }) {
     const message = {
         topic: 'daily_tasks',
 
