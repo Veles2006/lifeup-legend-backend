@@ -4,7 +4,7 @@ import fs from 'fs';
 const path =
     process.env.NODE_ENV === 'production'
         ? '/etc/secrets/firebase-admin.json'
-        : '../firebase-admin.json';
+        : './firebase-admin.json';
 
 const serviceAccount = JSON.parse(
     fs.readFileSync(path, 'utf-8')
