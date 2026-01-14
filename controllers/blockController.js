@@ -64,7 +64,7 @@ export const getAllBlockeds = async (req, res) => {
     }
 };
 
-const createKeys = async ({ userId, appName, blockId }) => {
+const createKeys = async ({ userId, appName, packageName, blockId }) => {
     const items = eightKeys.map((key, index) => ({
         userId,
         name: `${key.color} Key [ ${appName} ]`,
@@ -73,6 +73,10 @@ const createKeys = async ({ userId, appName, blockId }) => {
         category: 'key',
         keyInfo: {
             blockId: blockId,
+            app: {
+                package: packageName,
+                name: appName,
+            }
         },
         description: `Chìa khoá mở ${appName} trong ${key.time} phút.`,
         icon: key.icon,
@@ -102,6 +106,7 @@ export const createBlock = async (req, res) => {
         await createKeys({
             userId,
             appName,
+            packageName,
             blockId: block._id,
         });
 
