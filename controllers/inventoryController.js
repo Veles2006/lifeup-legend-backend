@@ -26,7 +26,7 @@ export const getInventory = async (req, res) => {
     try {
         const inventory = await Inventory.find({
             userId: req.user._id,
-        }).populate('itemId', 'name rank category description icon');
+        }).populate('itemId', 'name tier rank category description icon');
 
         res.status(200).json(inventory);
     } catch (err) {

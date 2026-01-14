@@ -72,7 +72,7 @@ const itemSchema = new mongoose.Schema({
     metadata: { type: Object, default: {} },
 
     description: { type: String, default: '' },
-    icon: { type: String, default: '' },
+    icon: { type: String, default: 'https://res.cloudinary.com/dr1vfmngy/image/upload/v1768395172/Default_Image_weztpa.png' },
 });
 
 export default mongoose.model('Item', itemSchema, 'items');
