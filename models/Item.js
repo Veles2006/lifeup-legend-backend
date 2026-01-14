@@ -64,13 +64,13 @@ const itemSchema = new mongoose.Schema({
             default: false,
         },
         app: {
-            packageName: {
+            package: {
                 type: String,
-                default: ''
+                default: '',
             },
             name: {
                 type: String,
-                default: ''
+                default: '',
             },
         }
     },
