@@ -63,6 +63,16 @@ const itemSchema = new mongoose.Schema({
             type: Boolean,
             default: false,
         },
+        app: {
+            packageName: {
+                type: String,
+                default: ''
+            },
+            name: {
+                type: String,
+                default: ''
+            },
+        }
     },
 
     // hiệu ứng (chỉ có nếu là consumable / buff)
