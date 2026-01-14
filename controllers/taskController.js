@@ -11,13 +11,20 @@ import Task from "../models/Task.js";
 
 export const getTasksById = async (req, res) => {
     try {
-        const userId = req.user._id
+        const userId = req.user._id;
+
         const allTasks = await Task.find({ userId })
-        res.json(allTasks)
+            .populate({
+                path: 'reward.items.itemId',
+                select: 'name tier rank category description icon',
+            });
+
+        res.json(allTasks);
     } catch (err) {
-        res.status(500).json({ error: err.message })
+        res.status(500).json({ error: err.message });
     }
-}
+};
+
 
 export const updateTaskStatus = async (req, res) => {
     try {
