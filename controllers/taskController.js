@@ -1,4 +1,4 @@
-import Task from "../models/Task.js";
+import Task from '../models/Task.js';
 
 // export const getTasks = async (req, res) => {
 //     try {
@@ -13,11 +13,10 @@ export const getTasksById = async (req, res) => {
     try {
         const userId = req.user._id;
 
-        const allTasks = await Task.find({ userId })
-            .populate({
-                path: 'reward.items.itemId',
-                select: 'name tier rank category description icon',
-            });
+        const allTasks = await Task.find({ userId }).populate({
+            path: 'reward.items.itemId',
+            select: 'name tier rank category description icon',
+        });
 
         res.json(allTasks);
     } catch (err) {
@@ -25,23 +24,33 @@ export const getTasksById = async (req, res) => {
     }
 };
 
-
 export const updateTaskStatus = async (req, res) => {
     try {
         const { status } = req.body;
 
-        if (!['pending', 'in_progress', 'completed', 'failed', 'expired'].includes(status)) {
-            return res.status(400).json({ error: "Trạng thái không hợp lệ" });
+        if (
+            ![
+                'pending',
+                'in_progress',
+                'completed',
+                'failed',
+                'expired',
+            ].includes(status)
+        ) {
+            return res.status(400).json({ error: 'Trạng thái không hợp lệ' });
         }
 
         const updatedTask = await Task.findByIdAndUpdate(
             req.params.id,
             { status },
             { new: true }
-        );
+        ).populate({
+            path: 'reward.items.itemId',
+            select: 'name tier rank category description icon',
+        });
 
         if (!updatedTask) {
-            return res.status(404).json({ error: "Không tìm thấy nhiệm vụ" });
+            return res.status(404).json({ error: 'Không tìm thấy nhiệm vụ' });
         }
 
         res.json(updatedTask);
@@ -55,10 +64,10 @@ export const deleteTask = async (req, res) => {
         const deleted = await Task.findByIdAndDelete(req.params.id);
 
         if (!deleted) {
-            return res.status(404).json({ error: "Không tìm thấy nhiệm vụ" });
+            return res.status(404).json({ error: 'Không tìm thấy nhiệm vụ' });
         }
 
-        res.json({ message: "🗑️ Đã xóa nhiệm vụ thành công", deleted });
+        res.json({ message: '🗑️ Đã xóa nhiệm vụ thành công', deleted });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
