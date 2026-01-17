@@ -1,4 +1,5 @@
 import express from 'express';
+import userRoutes from './userRoutes.js';
 import playerRoutes from './playerRoutes.js';
 import taskRoutes from './taskRoutes.js';
 import itemRoutes from './itemRoutes.js';
@@ -12,7 +13,8 @@ import userScheduleRoutes from './userScheduleRoutes.js';
 const router = express.Router();
 
 router.use('/auth', authRoutes);
-router.use('/players', playerRoutes);
+router.use('/users', userRoutes);
+router.use('/player', playerRoutes);
 router.use('/tasks', taskRoutes);
 router.use('/items', itemRoutes);
 router.use('/dict', dictionaryRoutes);

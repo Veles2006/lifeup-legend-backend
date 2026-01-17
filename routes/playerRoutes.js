@@ -1,10 +1,15 @@
-import express from "express";
-import { getUsers, createUser } from "../controllers/userController.js";
+import express from 'express';
+import {
+    getPlayer,
+    updatePlayerProgress,
+    deletePlayer,
+} from '../controllers/playerController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get("/", getUsers);
-router.post("/", createUser);
-// router.get("/all", getCharacters);
+router.get('/', protect, getPlayer);
+router.post('/', protect, updatePlayerProgress);
+router.delete('/', protect, deletePlayer);
 
 export default router;
