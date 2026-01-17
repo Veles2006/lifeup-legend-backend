@@ -1,22 +1,34 @@
 import mongoose from 'mongoose';
 import Inventory from '../models/Inventory.js';
 
-export const addItemInventory = async (req, res) => {
+export const addItemsInventory = async (req, res) => {
     try {
         const userId = req.user._id;
-        const { itemId, amount = 1 } = req.body;
+        const { items } = req.body;
 
-        await Inventory.updateOne(
-            { userId, itemId },
-            {
-                $inc: { quantity: amount },
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'Items is required' });
+        }
 
-                $setOnInsert: { userId, itemId },
-            },
-            { upsert: true }
-        );
+        const ops = items
+            .filter((i) => i.itemId)
+            .map(({ itemId, amount = 1 }) => ({
+                updateOne: {
+                    filter: { userId, itemId },
+                    update: {
+                        $inc: { quantity: Math.max(1, amount) },
+                        $setOnInsert: { userId, itemId },
+                    },
+                    upsert: true,
+                },
+            }));
 
-        res.status(201).json({ message: 'Item added to inventory' });
+        await Inventory.bulkWrite(ops);
+
+        res.status(201).json({
+            message: 'Item added to inventory',
+            count: items.length,
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -26,7 +38,10 @@ export const getInventory = async (req, res) => {
     try {
         const inventory = await Inventory.find({
             userId: req.user._id,
-        }).populate('itemId', 'name tier rank category description keyInfo icon');
+        }).populate(
+            'itemId',
+            'name tier rank category description keyInfo icon',
+        );
 
         res.status(200).json(inventory);
     } catch (err) {
@@ -56,7 +71,7 @@ export const useItem = async (req, res) => {
             {
                 $inc: { quantity: -1 },
             },
-            { new: true }
+            { new: true },
         );
 
         if (!item) {
