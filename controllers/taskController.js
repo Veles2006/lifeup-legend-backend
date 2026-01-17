@@ -15,7 +15,7 @@ export const getTasksById = async (req, res) => {
 
         const allTasks = await Task.find({ userId }).populate({
             path: 'reward.items.itemId',
-            select: 'name tier rank category description icon',
+            select: '_id name tier rank category description icon',
         });
 
         res.json(allTasks);
