@@ -212,7 +212,7 @@ function buildProgress(requirement, pref) {
             return { current: 0, target: 1 };
 
         case 'tomato':
-            return { current: 0, target: Math.ceil(pref.availableTime / 25) };
+            return { current: 0, target: Math.ceil(pref.availableTime / (pref.pomodoroLength || 25)) };
 
         case 'counting_app_time':
             return { current: 0, target: pref.availableTime };

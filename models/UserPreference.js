@@ -18,10 +18,16 @@ const UserPreferenceScheme = new mongoose.Schema({
         enum: ['chill', 'balanced', 'hardcore', 'focus'],
         default: 'balanced',
     },
+    pomodoroLength: {
+        type: Number,
+        default: 25, // phút / 1 pomodoro
+        min: 5,
+        max: 60,
+    },
     fixedRequirement: {
         type: String,
         enum: ['tap_to_complete', 'tomato', 'counting_app_time', null],
-        default: null
+        default: null,
     },
     difficulty: {
         type: String,
@@ -52,5 +58,5 @@ const UserPreferenceScheme = new mongoose.Schema({
 export default mongoose.model(
     'UserPreference',
     UserPreferenceScheme,
-    'UserPreferences'
+    'UserPreferences',
 );
