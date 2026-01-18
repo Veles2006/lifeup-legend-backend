@@ -18,6 +18,11 @@ const UserPreferenceScheme = new mongoose.Schema({
         enum: ['chill', 'balanced', 'hardcore', 'focus'],
         default: 'balanced',
     },
+    fixedRequirement: {
+        type: String,
+        enum: ['tap_to_complete', 'tomato', 'counting_app_time', null],
+        default: null
+    },
     difficulty: {
         type: String,
         enum: [

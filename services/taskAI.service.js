@@ -193,16 +193,35 @@ async function getItemsForTier(tierIndex, quantity = 1) {
 }
 
 function decideRequirement(pref) {
-    if (pref?.fixedRequirement) {
-        return pref.fixedRequirement;
+    const allowed = ['tap_to_complete', 'tomato', 'counting_app_time'];
+
+    if (allowed.includes(pref?.fixedRequirement)) {
+        return pref.fixedRequirement; // 🔒 CỐ ĐỊNH
     }
 
     return pickByWeight([
         { key: 'tap_to_complete', weight: 50 },
         { key: 'tomato', weight: 30 },
         { key: 'counting_app_time', weight: 20 },
-    ]).key;
+    ]).key; // 🎲 RANDOM
 }
+
+function buildProgress(requirement, pref) {
+    switch (requirement) {
+        case 'tap_to_complete':
+            return { current: 0, target: 1 };
+
+        case 'tomato':
+            return { current: 0, target: Math.ceil(pref.availableTime / 25) };
+
+        case 'counting_app_time':
+            return { current: 0, target: pref.availableTime };
+
+        default:
+            return { current: 0, target: pref.availableTime };
+    }
+}
+
 
 async function getRandomKeyByTier(userId, tier) {
     const result = await Item.aggregate([
@@ -233,13 +252,7 @@ export async function calculateDailyTaskLogic(userId) {
     const difficulty = pickByWeight(DIFFICULTY_POOL).key;
 
     // 2️⃣ Determine requirement type (tapping, pomodoro, etc.)
-    const requirement = pref?.fixedRequirement
-        ? pref.fixedRequirement
-        : pickByWeight([
-              { key: 'tap_to_complete', weight: 50 },
-              { key: 'tomato', weight: 30 },
-              { key: 'counting_app_time', weight: 20 },
-          ]).key;
+    const requirement = decideRequirement(pref);
 
     // 3️⃣ Set up reward object with EXP and Gold
     const rewardConfig = REWARD_TABLE[difficulty] || {
@@ -260,10 +273,10 @@ export async function calculateDailyTaskLogic(userId) {
         defaultExtraCount !== undefined
             ? defaultExtraCount
             : RANK_KEY_INDEX[difficulty] !== undefined
-            ? RANK_KEY_INDEX[difficulty] < KEY_TIERS.length - 1
-                ? RANK_KEY_INDEX[difficulty] + 1
-                : KEY_TIERS.length
-            : 1;
+              ? RANK_KEY_INDEX[difficulty] < KEY_TIERS.length - 1
+                  ? RANK_KEY_INDEX[difficulty] + 1
+                  : KEY_TIERS.length
+              : 1;
     // ^ The above essentially defaults to the schema's default values (mortal=1,...creation=8).
     // RANK_KEY_INDEX[difficulty] + 1 is just a fallback formula here but since schema defaults are set, pref.extraItemsCount[difficulty] should exist.
 
@@ -336,8 +349,8 @@ export async function calculateDailyTaskLogic(userId) {
             difficulty === 'creation'
                 ? RANK_KEY_INDEX.creation
                 : Math.random() < 0.25
-                ? Math.min(rankIndex + 1, 7)
-                : rankIndex;
+                  ? Math.min(rankIndex + 1, 7)
+                  : rankIndex;
 
         const tierName = KEY_TIERS[tierIdx];
         const k = await getRandomKeyByTier(userId, tierName);
@@ -345,7 +358,7 @@ export async function calculateDailyTaskLogic(userId) {
         keyItems.push(
             k
                 ? { itemId: k._id, quantity: 1 }
-                : { itemId: `${tierName}_key`, quantity: 1 }
+                : { itemId: `${tierName}_key`, quantity: 1 },
         );
     }
 
@@ -413,7 +426,7 @@ export async function calculateDailyTaskLogic(userId) {
     keys.push(
         mainKey
             ? { itemId: mainKey._id, quantity: 1 }
-            : { itemId: `${rankTierName}_key`, quantity: 1 }
+            : { itemId: `${rankTierName}_key`, quantity: 1 },
     );
 
     // Tạo thêm key phụ
@@ -431,20 +444,22 @@ export async function calculateDailyTaskLogic(userId) {
             difficulty === 'creation'
                 ? RANK_KEY_INDEX.creation
                 : Math.random() < 0.25
-                ? Math.min(rankIndex + 1, 7)
-                : rankIndex;
+                  ? Math.min(rankIndex + 1, 7)
+                  : rankIndex;
 
         const tierName = KEY_TIERS[tierIdx];
         const k = await getRandomKeyByTier(userId, tierName);
         keys.push(
             k
                 ? { itemId: k._id, quantity: 1 }
-                : { itemId: `${tierName}_key`, quantity: 1 }
+                : { itemId: `${tierName}_key`, quantity: 1 },
         );
     }
 
     const finalRewardItems =
-        itemsList.length === 0 ? [...keys, ...keyItems] : [...keys, ...itemsList];
+        itemsList.length === 0
+            ? [...keys, ...keyItems]
+            : [...keys, ...itemsList];
 
     // Consolidate the itemsList into reward.items with proper id and quantity
     const rewardItemsMap = {}; // map itemId (or item _id if real item docs) to quantity and reference
@@ -491,10 +506,7 @@ export async function calculateDailyTaskLogic(userId) {
     };
     const penalty = PENALTY_TABLE[difficulty] || {};
 
-    const progress = {
-        current: 0,
-        target: pref.availableTime,
-    };
+    const progress = buildProgress(requirement, pref);
 
     return {
         ...nameAndDescription,
