@@ -108,15 +108,20 @@ function buildKeyDrop(rank) {
     ];
 }
 
-export async function generateTaskByAI(goals) {
+export async function generateTaskByAI(goal, availableTime) {
+    const timeText = formatDuration(availableTime);
+
     const prompt = `
 You are a life gamification task writer.
 
 Your job is ONLY to write the task content.
-DO NOT decide difficulty, rewards, penalties, or rules.
+DO NOT decide difficulty, rewards, penalties, rules, or requirements.
 
-User goals:
-${goals.join(', ')}
+User goal:
+- ${goal}
+
+User available time:
+- ${timeText}
 
 Generate ONE task in JSON format:
 
@@ -127,9 +132,10 @@ Generate ONE task in JSON format:
 
 Rules:
 - Task must be realistic and actionable in real life
-- Task should align with the user's goals
+- Task MUST fit within the user's available time
+- Task should clearly relate to the user's goal
 - Write the content in VIETNAMESE
-- Do NOT include rewards, penalties, difficulty, or requirement
+- Do NOT include rewards, penalties, difficulty, rules, or requirements
 `;
 
     const res = await openai.chat.completions.create({
@@ -221,7 +227,7 @@ function buildProgress(requirement, pref) {
             return {
                 current: 0,
                 target: Math.ceil(
-                    pref.availableTime / (pref.pomodoroLength || 25)
+                    pref.availableTime / (pref.pomodoroLength || 25),
                 ),
                 unit: 'sessions',
             };
@@ -229,14 +235,14 @@ function buildProgress(requirement, pref) {
         case 'timer_task':
             return {
                 current: 0,
-                target: pref.availableTime * 60,
+                target: pref.availableTime,
                 unit: 'seconds',
             };
 
         case 'counting_app_time':
             return {
                 current: 0,
-                target: pref.availableTime * 60,
+                target: pref.availableTime,
                 unit: 'seconds',
             };
 
@@ -244,7 +250,6 @@ function buildProgress(requirement, pref) {
             return { current: 0, target: 1, unit: 'count' };
     }
 }
-
 
 async function getRandomKeyByTier(userId, tier) {
     const result = await Item.aggregate([
@@ -261,6 +266,47 @@ async function getRandomKeyByTier(userId, tier) {
     return result[0] || null;
 }
 
+function decideAvailableTime(availableTime, difficulty) {
+    const multiplierMap = {
+        mortal: 1,
+        yao: 2,
+        gui: 3,
+        mara: 4,
+        sage: 5,
+        xian: 6,
+        deity: 7,
+        creation: 8,
+    };
+
+    const multiplier = multiplierMap[difficulty] ?? 1;
+    const result = availableTime * multiplier;
+
+    return result >= 28800 ? 28800 : result;
+}
+
+export function formatDuration(seconds) {
+    if (typeof seconds !== 'number' || seconds <= 0) {
+        return '0 phút';
+    }
+
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+
+    const parts = [];
+
+    if (h > 0) parts.push(`${h} giờ`);
+    if (m > 0) parts.push(`${m} phút`);
+    if (s > 0 && h === 0) parts.push(`${s} giây`);
+    // ⬆️ thường không cần ghi giây nếu đã có giờ
+
+    return parts.join(' ');
+}
+
+function randomGoal(goals) {
+    if (!Array.isArray(goals) || goals.length === 0) return '';
+    return goals[Math.floor(Math.random() * goals.length)];
+}
 /**
  * Main function to calculate task logic: difficulty, requirement, reward, penalty.
  * This function is now asynchronous because it may fetch item data from the database.
@@ -269,13 +315,21 @@ export async function calculateDailyTaskLogic(userId) {
     const pref = await UserPreference.findOne({ userId });
     if (!pref) throw new Error('Missing user preference');
 
-    const nameAndDescription = await generateTaskByAI(pref.goals);
-
     // 1️⃣ Randomly decide difficulty based on weights
-    const difficulty = pickByWeight(DIFFICULTY_POOL).key;
+
+    const difficulty = pref?.difficulty ?? pickByWeight(DIFFICULTY_POOL).key;
+
+    const availableTime = decideAvailableTime(pref.availableTime, difficulty);
 
     // 2️⃣ Determine requirement type (tapping, pomodoro, etc.)
     const requirement = decideRequirement(pref);
+
+    const goal = randomGoal(pref.goals) || 'Phát triển bản thân';
+
+    const nameAndDescription = await generateTaskByAI(
+        goal,
+        availableTime
+    );
 
     // 3️⃣ Set up reward object with EXP and Gold
     const rewardConfig = REWARD_TABLE[difficulty] || {

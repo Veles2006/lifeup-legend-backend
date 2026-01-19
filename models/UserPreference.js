@@ -26,7 +26,7 @@ const UserPreferenceScheme = new mongoose.Schema({
     },
     fixedRequirement: {
         type: String,
-        enum: ['tap_to_complete', 'tomato', 'counting_app_time', null],
+        enum: ['tap_to_complete', 'tomato', 'timer_task', 'counting_app_time', null],
         default: null,
     },
     difficulty: {
@@ -41,7 +41,7 @@ const UserPreferenceScheme = new mongoose.Schema({
             'deity',
             'creation',
         ],
-        default: 'mortal',
+        default: null,
     },
     extraItemsCount: {
         mortal: { type: Number, default: 1 },
