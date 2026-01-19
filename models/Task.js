@@ -21,7 +21,12 @@ const TaskSchema = new mongoose.Schema(
         description: String,
         requirement: {
             type: String,
-            enum: ['tap_to_complete', 'tomato', 'counting_app_time'],
+            enum: [
+                'tap_to_complete',
+                'tomato',
+                'timer_task',
+                'counting_app_time',
+            ],
             required: true,
         },
         reward: {
@@ -64,6 +69,11 @@ const TaskSchema = new mongoose.Schema(
         progress: {
             current: { type: Number, default: 0 },
             target: { type: Number, min: 1 },
+            unit: {
+                type: String,
+                enum: ['count', 'minutes', 'sessions', 'seconds'],
+                default: 'count',
+            },
         },
         difficulty: {
             type: String,
@@ -82,7 +92,7 @@ const TaskSchema = new mongoose.Schema(
         dateKey: { type: String, required: true },
         spawnTime: { type: String, default: null },
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 TaskSchema.pre('save', function (next) {
@@ -92,6 +102,9 @@ TaskSchema.pre('save', function (next) {
     next();
 });
 
-TaskSchema.index({ userId: 1, type: 1, dateKey: 1, spawnTime: 1 }, { unique: true });
+TaskSchema.index(
+    { userId: 1, type: 1, dateKey: 1, spawnTime: 1 },
+    { unique: true },
+);
 
 export default mongoose.model('Task', TaskSchema, 'tasks');

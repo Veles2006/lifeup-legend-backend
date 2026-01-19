@@ -193,32 +193,55 @@ async function getItemsForTier(tierIndex, quantity = 1) {
 }
 
 function decideRequirement(pref) {
-    const allowed = ['tap_to_complete', 'tomato', 'counting_app_time'];
+    const allowed = [
+        'tap_to_complete',
+        'tomato',
+        'timer_task',
+        'counting_app_time',
+    ];
 
     if (allowed.includes(pref?.fixedRequirement)) {
         return pref.fixedRequirement; // 🔒 CỐ ĐỊNH
     }
 
     return pickByWeight([
-        { key: 'tap_to_complete', weight: 50 },
-        { key: 'tomato', weight: 30 },
-        { key: 'counting_app_time', weight: 20 },
-    ]).key; // 🎲 RANDOM
+        { key: 'tap_to_complete', weight: 45 },
+        { key: 'tomato', weight: 25 },
+        { key: 'timer_task', weight: 20 },
+        { key: 'counting_app_time', weight: 10 },
+    ]).key;
 }
 
 function buildProgress(requirement, pref) {
     switch (requirement) {
         case 'tap_to_complete':
-            return { current: 0, target: 1 };
+            return { current: 0, target: 1, unit: 'count' };
 
         case 'tomato':
-            return { current: 0, target: Math.ceil(pref.availableTime / (pref.pomodoroLength || 25)) };
+            return {
+                current: 0,
+                target: Math.ceil(
+                    pref.availableTime / (pref.pomodoroLength || 25)
+                ),
+                unit: 'sessions',
+            };
+
+        case 'timer_task':
+            return {
+                current: 0,
+                target: pref.availableTime * 60,
+                unit: 'seconds',
+            };
 
         case 'counting_app_time':
-            return { current: 0, target: pref.availableTime };
+            return {
+                current: 0,
+                target: pref.availableTime * 60,
+                unit: 'seconds',
+            };
 
         default:
-            return { current: 0, target: pref.availableTime };
+            return { current: 0, target: 1, unit: 'count' };
     }
 }
 
