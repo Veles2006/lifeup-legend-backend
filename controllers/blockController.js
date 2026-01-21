@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Block from '../models/Block.js';
 import Item from '../models/Item.js';
+import Inventory from '../models/Inventory.js';
 
 const eightKeys = [
     {
@@ -76,7 +77,7 @@ const createKeys = async ({ userId, appName, packageName, blockId }) => {
             app: {
                 package: packageName,
                 name: appName,
-            }
+            },
         },
         description: `Chìa khoá mở ${appName} trong ${key.time} phút.`,
         icon: key.icon,
@@ -112,7 +113,7 @@ export const createBlock = async (req, res) => {
 
         res.status(201).json(block);
     } catch (err) {
-        if ((err.code === 11000)) {
+        if (err.code === 11000) {
             return res.status(400).json({
                 message: 'Block với packageName này đã tồn tại!',
             });
@@ -121,3 +122,124 @@ export const createBlock = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+export const deleteOneBlock = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const userId = req.user_id;
+        const { blockId } = req.body;
+
+        if (!blockId) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({ error: 'blockId là bắt buộc!' });
+        }
+
+        // 1️⃣ Lấy item _id
+        const items = await Item.find(
+            { userId, 'keyInfo.blockId': blockId },
+            { _id: 1 },
+            { session }
+        );
+
+        const itemIds = items.map(i => i._id);
+
+        // 2️⃣ Xóa Item + Inventory
+        if (itemIds.length > 0) {
+            await Item.deleteMany(
+                { userId, _id: { $in: itemIds } },
+                { session }
+            );
+
+            await Inventory.deleteMany(
+                { userId, itemId: { $in: itemIds } },
+                { session }
+            );
+        }
+
+        // 3️⃣ Xóa Block
+        await Block.deleteOne(
+            { userId, _id: blockId },
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+            success: true,
+            deletedBlock: blockId,
+            deletedItems: itemIds.length,
+        });
+
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(500).json({ error: err.message });
+    }
+};
+
+
+export const deleteManyBlock = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const userId = req.user_id;
+        const { blockIds } = req.body;
+
+        if (!Array.isArray(blockIds) || blockIds.length === 0) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({ error: 'blockIds là bắt buộc!' });
+        }
+
+        // 1️⃣ Lấy item _id
+        const items = await Item.find(
+            {
+                userId,
+                'keyInfo.blockId': { $in: blockIds },
+            },
+            { _id: 1 },
+            { session }
+        );
+
+        const itemIds = items.map(i => i._id);
+
+        // 2️⃣ Xóa Item + Inventory
+        if (itemIds.length > 0) {
+            await Item.deleteMany(
+                { userId, _id: { $in: itemIds } },
+                { session }
+            );
+
+            await Inventory.deleteMany(
+                { userId, itemId: { $in: itemIds } },
+                { session }
+            );
+        }
+
+        // 3️⃣ Xóa Block
+        await Block.deleteMany(
+            { userId, _id: { $in: blockIds } },
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+            success: true,
+            deletedBlocks: blockIds.length,
+            deletedItems: itemIds.length,
+        });
+
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(500).json({ error: err.message });
+    }
+};
+

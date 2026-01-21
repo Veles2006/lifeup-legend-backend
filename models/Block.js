@@ -85,7 +85,7 @@ blockSchema.pre("save", function (next) {
 });
 
 blockSchema.index(
-    { useId: 1, packageName: 1},
+    { userId: 1, packageName: 1},
     { unique: true }
 )
 
