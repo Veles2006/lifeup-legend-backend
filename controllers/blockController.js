@@ -129,7 +129,7 @@ export const deleteOneBlock = async (req, res) => {
 
     try {
         const userId = req.user_id;
-        const { blockId } = req.body;
+        const { blockId } = req.params;
 
         if (!blockId) {
             await session.abortTransaction();
