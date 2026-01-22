@@ -128,7 +128,7 @@ export const deleteOneBlock = async (req, res) => {
     session.startTransaction();
 
     try {
-        const userId = req.user_id;
+        const userId = req.user._id;
         const { blockId } = req.params;
 
         if (!blockId) {
@@ -137,33 +137,39 @@ export const deleteOneBlock = async (req, res) => {
             return res.status(400).json({ error: 'blockId là bắt buộc!' });
         }
 
+        const block = await Block.findOne({ userId, _id: blockId }).session(
+            session,
+        );
+
+        if (!block) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({ error: 'Block không tồn tại' });
+        }
         // 1️⃣ Lấy item _id
         const items = await Item.find(
             { userId, 'keyInfo.blockId': blockId },
             { _id: 1 },
-            { session }
+            { session },
         );
 
-        const itemIds = items.map(i => i._id);
+        const itemIds = items.map((i) => i._id);
 
         // 2️⃣ Xóa Item + Inventory
         if (itemIds.length > 0) {
             await Item.deleteMany(
                 { userId, _id: { $in: itemIds } },
-                { session }
+                { session },
             );
 
             await Inventory.deleteMany(
                 { userId, itemId: { $in: itemIds } },
-                { session }
+                { session },
             );
         }
 
         // 3️⃣ Xóa Block
-        await Block.deleteOne(
-            { userId, _id: blockId },
-            { session }
-        );
+        await Block.deleteOne({ userId, _id: blockId }, { session });
 
         await session.commitTransaction();
         session.endSession();
@@ -173,7 +179,6 @@ export const deleteOneBlock = async (req, res) => {
             deletedBlock: blockId,
             deletedItems: itemIds.length,
         });
-
     } catch (err) {
         await session.abortTransaction();
         session.endSession();
@@ -181,13 +186,12 @@ export const deleteOneBlock = async (req, res) => {
     }
 };
 
-
 export const deleteManyBlock = async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-        const userId = req.user_id;
+        const userId = req.user._id;
         const { blockIds } = req.body;
 
         if (!Array.isArray(blockIds) || blockIds.length === 0) {
@@ -203,29 +207,26 @@ export const deleteManyBlock = async (req, res) => {
                 'keyInfo.blockId': { $in: blockIds },
             },
             { _id: 1 },
-            { session }
+            { session },
         );
 
-        const itemIds = items.map(i => i._id);
+        const itemIds = items.map((i) => i._id);
 
         // 2️⃣ Xóa Item + Inventory
         if (itemIds.length > 0) {
             await Item.deleteMany(
                 { userId, _id: { $in: itemIds } },
-                { session }
+                { session },
             );
 
             await Inventory.deleteMany(
                 { userId, itemId: { $in: itemIds } },
-                { session }
+                { session },
             );
         }
 
         // 3️⃣ Xóa Block
-        await Block.deleteMany(
-            { userId, _id: { $in: blockIds } },
-            { session }
-        );
+        await Block.deleteMany({ userId, _id: { $in: blockIds } }, { session });
 
         await session.commitTransaction();
         session.endSession();
@@ -235,11 +236,9 @@ export const deleteManyBlock = async (req, res) => {
             deletedBlocks: blockIds.length,
             deletedItems: itemIds.length,
         });
-
     } catch (err) {
         await session.abortTransaction();
         session.endSession();
         return res.status(500).json({ error: err.message });
     }
 };
-
