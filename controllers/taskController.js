@@ -111,7 +111,11 @@ export const updateTaskStatus = async (req, res) => {
         if (!updatedTask) {
             await session.abortTransaction();
             session.endSession();
-            return res.status(404).json({ error: 'Không tìm thấy nhiệm vụ hoặc nhiệm vụ đã được hoàn thành trước đó' });
+            return res
+                .status(404)
+                .json({
+                    error: 'Không tìm thấy nhiệm vụ hoặc nhiệm vụ đã được hoàn thành trước đó',
+                });
         }
 
         if (status === 'completed') {
@@ -131,8 +135,13 @@ export const updateTaskStatus = async (req, res) => {
                 { session },
             );
 
-            if (Array.isArray(items) && items.length !== 0) {
-                await addItemsInventory({ userId, items }, { session });
+            const inventoryItems = Array.isArray(items) ? items : items?.items;
+
+            if (Array.isArray(inventoryItems) && inventoryItems.length !== 0) {
+                await addItemsInventory(
+                    { userId, items: inventoryItems },
+                    { session },
+                );
             }
         }
 
