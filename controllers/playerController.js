@@ -6,7 +6,7 @@ export const getPlayer = async (req, res) => {
 
         const player = await Player.findOne({ userId });
 
-        res.status(200).json(player);
+        return res.status(200).json(player);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -39,7 +39,7 @@ export const updatePlayerProgress = async (req, res) => {
             },
             { upsert: true, new: true },
         );
-        res.status(200).json(player);
+        return res.status(200).json(player);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -55,8 +55,8 @@ export const deletePlayer = async (req, res) => {
             return res.status(404).json({ message: 'Player not found' });
         }
 
-        res.status(200).json({ message: 'Player deleted successfully' });
+        return res.status(200).json({ message: 'Player deleted successfully' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };

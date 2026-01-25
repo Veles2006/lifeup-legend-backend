@@ -3,7 +3,7 @@ import { generateToken } from '../utils/generateToken.js';
 
 export const register = async (req, res) => {
     try {
-        const { username, email, password } = res.body;
+        const { username, email, password } = req.body; // 🔥 FIX
 
         // Check thiếu field
         if (!username || !email || !password) {
@@ -29,7 +29,7 @@ export const register = async (req, res) => {
         // Tạo token
         const token = generateToken(newUser._id);
 
-        res.status(201).json({
+        return res.status(201).json({
             message: 'Đăng ký thành công',
             user: {
                 id: newUser._id,
@@ -40,9 +40,10 @@ export const register = async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ message: 'Lỗi server' });
+        return res.status(500).json({ message: 'Lỗi server' }); // ✅ thêm return
     }
 };
+
 
 export const login = async (req, res) => {
     try {
@@ -75,7 +76,7 @@ export const login = async (req, res) => {
 
         const token = generateToken(user._id);
 
-        res.json({
+        return res.json({
             message: 'Đăng nhập thành công',
             user: {
                 id: user._id,
@@ -86,12 +87,14 @@ export const login = async (req, res) => {
         });
     } catch (err) {
         console.error(err.message);
-        res.status(500).json({ message: 'Lỗi server' });
+        return res.status(500).json({ message: 'Lỗi server' }); // ✅ thêm return
     }
 };
 
+
 export const me = async (req, res) => {
-    res.json({
+    return res.json({
         user: req.user,
     });
 };
+

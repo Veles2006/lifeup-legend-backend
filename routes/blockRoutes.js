@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-    getAllBlockeds,
+    getAllBlocks,
     createBlock,
     deleteOneBlock,
     deleteManyBlock,
@@ -9,7 +9,7 @@ import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', protect, getAllBlockeds);
+router.get('/', protect, getAllBlocks);
 router.post('/', protect, createBlock);
 router.delete('/:blockId', protect, deleteOneBlock);
 router.delete('/', protect, deleteManyBlock);

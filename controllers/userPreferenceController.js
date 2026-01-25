@@ -26,9 +26,9 @@ export async function createUserPreference(req, res) {
             // extraItemsCount dùng default trong schema
         });
 
-        res.json(pref);
+        return res.json(pref);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Create UserPreference failed' });
+        return res.status(500).json({ message: 'Create UserPreference failed' });
     }
 }

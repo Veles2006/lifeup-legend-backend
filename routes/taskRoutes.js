@@ -5,7 +5,7 @@ import { protect } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.get("/", protect, getTasksById);
-router.post("/:id/status", updateTaskStatus);
-router.delete("/:id", deleteTask);
+router.post("/:id/status", protect, updateTaskStatus);
+router.delete("/:id", protect, deleteTask);
 
 export default router;

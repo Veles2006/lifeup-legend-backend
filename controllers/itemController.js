@@ -9,9 +9,9 @@ export const getAllItems = async (req, res) => {
             'appName packageName blockType'
         );
 
-        res.json(items);
+        return res.json(items);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };
 
@@ -26,9 +26,9 @@ export const getItemById = async (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy item' });
         }
 
-        res.json(item);
+        return res.json(item);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };
 
@@ -43,9 +43,9 @@ export const createItem = async (req, res) => {
 
         await item.save();
 
-        res.status(201).json(item);
+        return res.status(201).json(item);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };
 
@@ -59,9 +59,9 @@ export const updateItem = async (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy item' });
         }
 
-        res.json(updated);
+        return res.json(updated);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };
 
@@ -73,8 +73,8 @@ export const deleteItem = async (req, res) => {
             return res.status(404).json({ error: 'Không tìm thấy item' });
         }
 
-        res.json({ message: '🗑️ Đã xoá item thành công', deleted });
+        return res.json({ message: '🗑️ Đã xoá item thành công', deleted });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };

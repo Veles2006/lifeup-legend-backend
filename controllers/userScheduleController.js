@@ -18,9 +18,9 @@ export async function createUserSchedule(req, res) {
             enabled: true,
         });
 
-        res.json(schedule);
+        return res.json(schedule);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Create UserSchedule failed' });
+        return res.status(500).json({ message: 'Create UserSchedule failed' });
     }
 }

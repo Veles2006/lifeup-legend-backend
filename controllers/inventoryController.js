@@ -25,12 +25,12 @@ export const addItemsInventory = async (req, res) => {
 
         await Inventory.bulkWrite(ops);
 
-        res.status(201).json({
+        return res.status(201).json({
             message: 'Item added to inventory',
             count: items.length,
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };
 
@@ -43,9 +43,9 @@ export const getInventory = async (req, res) => {
             'name tier rank category description keyInfo icon',
         );
 
-        res.status(200).json(inventory);
+        return res.status(200).json(inventory);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };
 
@@ -78,11 +78,11 @@ export const useItem = async (req, res) => {
             return res.status(400).json({ message: 'Không đủ item' });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Used item successfully!',
             quantity: item.quantity,
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };

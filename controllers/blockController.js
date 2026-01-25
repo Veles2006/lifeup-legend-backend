@@ -54,18 +54,21 @@ const eightKeys = [
     },
 ];
 
-export const getAllBlockeds = async (req, res) => {
+export const getAllBlocks = async (req, res) => {
     try {
         const userId = req.user._id;
-        const allBlocks = await Block.find({ userId });
+        const allBlocks = await Block.find({ userId }).soft({ createdAt: -1 });
 
-        res.status(200).json(allBlocks);
+        return res.status(200).json(allBlocks);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };
 
-const createKeys = async ({ userId, appName, packageName, blockId }) => {
+const createKeys = async (
+    { userId, appName, packageName, blockId },
+    { session },
+) => {
     const items = eightKeys.map((key, index) => ({
         userId,
         name: `${key.color} Key [ ${appName} ]`,
@@ -83,15 +86,20 @@ const createKeys = async ({ userId, appName, packageName, blockId }) => {
         icon: key.icon,
     }));
 
-    await Item.insertMany(items);
+    return await Item.insertMany(items, { session });
 };
 
 export const createBlock = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
         const userId = req.user._id;
         const { appName, packageName } = req.body;
 
         if (!appName || !packageName) {
+            await session.abortTransaction();
+            session.endSession();
             return res
                 .status(400)
                 .json({ error: 'appName và packageName là bắt buộc' });
@@ -102,24 +110,32 @@ export const createBlock = async (req, res) => {
             userId: userId,
         });
 
-        await block.save();
+        await block.save({ session });
 
-        await createKeys({
-            userId,
-            appName,
-            packageName,
-            blockId: block._id,
-        });
+        await createKeys(
+            {
+                userId,
+                appName,
+                packageName,
+                blockId: block._id,
+            },
+            { session },
+        );
 
-        res.status(201).json(block);
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(201).json(block);
     } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
         if (err.code === 11000) {
             return res.status(400).json({
                 message: 'Block với packageName này đã tồn tại!',
             });
         }
 
-        res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: err.message });
     }
 };
 
