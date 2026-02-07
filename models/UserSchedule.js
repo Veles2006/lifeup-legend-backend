@@ -2,6 +2,40 @@ import mongoose from 'mongoose';
 
 const HHMM_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
+const dayConfigSchema = new mongoose.Schema(
+    {
+        day: {
+            type: String,
+            enum: [
+                'Monday',
+                'Tuesday',
+                'Wednesday',
+                'Thursday',
+                'Friday',
+                'Saturday',
+                'Sunday',
+            ],
+            required: true,
+        },
+        availableHours: {
+            type: Number,
+            min: 0,
+            max: 24,
+            default: 1,
+        },
+        enabled: {
+            type: Boolean,
+            default: true,
+        },
+        energyLevel: {
+            type: String,
+            enum: ['low', 'normal', 'high'],
+            default: 'normal',
+        },
+    },
+    { _id: false },
+);
+
 const userScheduleSchema = new mongoose.Schema(
     {
         userId: {
@@ -13,7 +47,7 @@ const userScheduleSchema = new mongoose.Schema(
 
         times: {
             type: [String],
-            required: true,
+            default: ['07:00'],
             validate: {
                 validator: function (arr) {
                     if (!Array.isArray(arr)) return false;
@@ -23,6 +57,28 @@ const userScheduleSchema = new mongoose.Schema(
                 },
                 message: 'Danh sách mốc giờ không hợp lệ (HH:mm, không trùng)',
             },
+        },
+
+        timeGoal: {
+            type: String,
+            default: '19:00',
+            validate: {
+                validator: (v) => HHMM_REGEX.test(v),
+                message: 'timeGoal phải theo HH:mm',
+            }
+        },
+
+        dayOfWeek: {
+            type: [dayConfigSchema],
+            default: () => [
+                { day: 'Monday', availableHours: 1 },
+                { day: 'Tuesday', availableHours: 1 },
+                { day: 'Wednesday', availableHours: 1 },
+                { day: 'Thursday', availableHours: 1 },
+                { day: 'Friday', availableHours: 1 },
+                { day: 'Saturday', availableHours: 1 },
+                { day: 'Sunday', availableHours: 1 },
+            ],
         },
 
         timezone: {
@@ -35,11 +91,11 @@ const userScheduleSchema = new mongoose.Schema(
             default: true,
         },
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 export default mongoose.model(
     'UserSchedule',
     userScheduleSchema,
-    'UserSchedules'
+    'UserSchedules',
 );

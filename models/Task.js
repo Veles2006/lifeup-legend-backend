@@ -7,10 +7,17 @@ const TaskSchema = new mongoose.Schema(
             ref: 'User',
             // required: true,
         },
-        name: String,
+        baseName: {
+            type: String,
+            default: '',
+        },
+        name: {
+            type: String,
+            required: true,
+        },
         type: {
             type: String,
-            enum: ['manual', 'recurring', 'daily', 'random'],
+            enum: ['manual', 'recurring', 'daily', 'random', 'goal'],
             required: true,
         },
         source: {
@@ -18,7 +25,10 @@ const TaskSchema = new mongoose.Schema(
             enum: ['manual', 'ai', 'system'],
             default: 'manual',
         },
-        description: String,
+        description: {
+            type: String,
+            required: true,
+        },
         requirement: {
             type: String,
             enum: [
@@ -63,8 +73,33 @@ const TaskSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'in_progress', 'completed', 'failed', 'expired'],
+            enum: [
+                'pending',
+                'in_progress',
+                'completed',
+                'failed',
+                'expired',
+                'retried',
+            ],
             default: 'pending',
+        },
+        retryOf: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Task',
+            default: null,
+        },
+        retryCount: {
+            type: Number,
+            default: 0,
+        },
+        goalId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Goal',
+            default: null
+        },
+        subGoalId: {
+            type: mongoose.Schema.Types.ObjectId,
+            default: null
         },
         progress: {
             current: { type: Number, default: 0 },
@@ -90,21 +125,21 @@ const TaskSchema = new mongoose.Schema(
             default: 'mortal',
         },
         dateKey: { type: String, required: true },
-        spawnTime: { type: String, default: null },
+        spawnTime: { type: String },
     },
     { timestamps: true },
 );
 
 TaskSchema.pre('save', function (next) {
     if (this.type !== 'daily') {
-        this.spawnTime = null;
+        this.spawnTime = undefined;
     }
     next();
 });
 
 TaskSchema.index(
-    { userId: 1, type: 1, dateKey: 1, spawnTime: 1 },
-    { unique: true },
+  { userId: 1, type: 1, dateKey: 1, spawnTime: 1 },
+  { unique: true, partialFilterExpression: { type: 'daily' } }
 );
 
 export default mongoose.model('Task', TaskSchema, 'tasks');

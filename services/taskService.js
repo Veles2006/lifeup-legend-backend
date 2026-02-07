@@ -10,6 +10,24 @@ import {
 import { startOfToday } from '../utils/time.js';
 import { endOfToday } from '../utils/time.js';
 import { sendDailyTaskNotification } from './notificationService.js';
+import { generateTaskGoal } from './taskGoalService.js';
+import Goal from '../models/Goal.js';
+
+const DAY_MAP = [
+    'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+];
+
+const IMAGE_URL = [
+    'https://i.pinimg.com/736x/9c/91/4b/9c914b5cfab2210c579183d5d7956c98.jpg',
+    'https://i.pinimg.com/736x/9d/1e/16/9d1e1665355084b5b2ba5b2100769e73.jpg',
+    'https://i.pinimg.com/736x/cb/c1/82/cbc1823811d5c02278d7ab23b195141e.jpg',
+];
 
 export async function runDailyTaskCheck() {
     const now = new Date();
@@ -19,22 +37,37 @@ export async function runDailyTaskCheck() {
         const userTime = convertToUserTime(now, schedule.timezone);
         const currentHHMM = formatHHMM(userTime);
 
-        if (!schedule.times.includes(currentHHMM)) continue;
+        if (schedule.times.includes(currentHHMM)) {
+            // 🔒 CHỐT: đã spawn hôm nay chưa?
+            const alreadySpawned = await Task.exists({
+                userId: schedule.userId,
+                type: 'daily',
+                spawnTime: currentHHMM,
+                date: {
+                    $gte: startOfToday(userTime),
+                    $lte: endOfToday(userTime),
+                },
+            });
 
-        // 🔒 CHỐT: đã spawn hôm nay chưa?
-        const alreadySpawned = await Task.exists({
-            userId: schedule.userId,
-            type: 'daily',
-            spawnTime: currentHHMM,
-            date: {
-                $gte: startOfToday(userTime),
-                $lte: endOfToday(userTime),
-            },
-        });
+            if (alreadySpawned) continue;
 
-        if (alreadySpawned) continue;
+            await spawnDailyTask(schedule.userId, currentHHMM, userTime);
+        }
 
-        await spawnDailyTask(schedule.userId, currentHHMM, userTime);
+        if (schedule.timeGoal === currentHHMM) {
+            const dayConfig = schedule.dayOfWeek.find(
+                (d) => d.day === DAY_MAP[userTime.getDay()],
+            );
+            if (!dayConfig || !dayConfig.enabled) continue;
+            const availableHours = dayConfig.availableHours;
+
+            await spawnDailyTaskGoal(
+                schedule.userId,
+                currentHHMM,
+                userTime,
+                availableHours,
+            );
+        }
     }
 }
 
@@ -53,7 +86,6 @@ async function spawnDailyTask(userId, currentHHMM, userTime) {
         deadline: endOfToday(userTime),
         spawnTime: currentHHMM,
     });
-
 
     // Test
     await sendDailyTaskNotification({
@@ -96,5 +128,98 @@ async function spawnRandomTask(userId) {
         type: 'random',
         source: 'system',
         status: 'pending',
+    });
+}
+
+async function spawnDailyTaskGoal(
+    userId,
+    currentHHMM,
+    userTime,
+    availableHours,
+) {
+    const data = await generateTaskGoal(userId, availableHours, userTime);
+
+    // 1️⃣ Check data có hợp lệ không
+    if (!Array.isArray(data)) {
+        console.error('[generateTaskGoal] Invalid return type', {
+            userId,
+            type: typeof data,
+            value: data,
+        });
+        return; // thoát luôn, không làm gì tiếp
+    }
+
+    // 2️⃣ Không có task nào để tạo
+    if (data.length === 0) {
+        console.info('[generateTaskGoal] No tasks generated', {
+            userId,
+            availableHours,
+            userTime,
+        });
+        return;
+    }
+
+    const dateKey = formatYYYYMMDD(userTime);
+
+    // 3️⃣ Loop an toàn
+    for (const entry of data) {
+        if (!entry?.taskData || !entry?.goalData) {
+            console.warn('[generateTaskGoal] Invalid task entry skipped', {
+                userId,
+                entry,
+            });
+            continue; // bỏ qua phần tử lỗi
+        }
+
+        const { taskData, goalData } = entry;
+
+        try {
+            const task = await Task.create({
+                userId,
+                ...taskData,
+                type: 'goal',
+                source: 'ai',
+                status: 'pending',
+                requirement: 'timer_task',
+                date: userTime,
+                dateKey,
+                goalId: goalData.goalId,
+                subGoalId: goalData.subGoalId,
+                deadline: endOfToday(userTime),
+            });
+
+            await Goal.updateOne(
+                {
+                    userId,
+                    _id: goalData.goalId,
+                    'subGoal._id': goalData.subGoalId,
+                },
+                {
+                    $push: {
+                        'subGoal.$.taskIds': task._id,
+                    },
+                },
+            );
+        } catch (err) {
+            console.error(
+                '[generateTaskGoal] Failed to create task or update goal',
+                {
+                    userId,
+                    taskData,
+                    goalData,
+                    err,
+                },
+            );
+            // không throw để các task khác vẫn chạy
+        }
+    }
+
+    const image = IMAGE_URL[Math.floor(Math.random() * IMAGE_URL.length)];
+
+    // Test
+    await sendDailyTaskNotification({
+        title: 'Nhiệm vụ cho mục tiêu của bạn đã được khởi tạo',
+        body: 'Đây là nội dung của nhiệm vụ đó vui lòng đọc kỹ ------------------- chỉ có thế thôi',
+        image,
     });
 }

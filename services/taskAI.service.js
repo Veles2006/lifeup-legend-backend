@@ -96,19 +96,9 @@ const ALLOWED_KEYS_COUNT = {
     creation: 3,
 };
 
-function buildKeyDrop(rank) {
-    const idx = RANK_KEY_INDEX[rank];
 
-    const lowKey = KEY_TIERS[idx];
-    const highKey = KEY_TIERS[Math.min(idx + 1, KEY_TIERS.length - 1)];
 
-    return [
-        { id: `${lowKey}_key`, weight: 75 }, // 3 phần
-        { id: `${highKey}_key`, weight: 25 }, // 1 phần
-    ];
-}
-
-export async function generateTaskByAI(goal, availableTime) {
+async function generateTaskByAI(goal, availableTime) {
     const timeText = formatDuration(availableTime);
 
     const prompt = `
@@ -169,27 +159,20 @@ function randomWithDecay(min, max) {
     return value;
 }
 
-/**
- * Retrieves a list of random items from the database for a given tier.
- * If the tier has no items and a lower tier exists, it will attempt to get 3 times the quantity from the next lower tier (recursive fallback).
- * Returns an array of item documents (or an empty array if none found at any tier).
- */
+
 async function getItemsForTier(tierIndex, quantity = 1) {
     if (tierIndex < 0) {
-        // No lower tier exists
         return [];
     }
     const tierName = KEY_TIERS[tierIndex];
-    // Fetch all non-key items of this tier
     let items = await Item.find({
         tier: tierName,
         category: { $nin: ['key', 'master_key'] },
     });
     if (!items || items.length === 0) {
-        // No items at this tier, fallback to next lower tier with triple quantity
         return getItemsForTier(tierIndex - 1, quantity * 3);
     }
-    // We have some items in this tier. Select `quantity` items randomly (allow duplicates if not enough distinct items).
+
     const result = [];
     for (let i = 0; i < quantity; i++) {
         const randomIndex = Math.floor(Math.random() * items.length);
@@ -307,10 +290,9 @@ function randomGoal(goals) {
     if (!Array.isArray(goals) || goals.length === 0) return '';
     return goals[Math.floor(Math.random() * goals.length)];
 }
-/**
- * Main function to calculate task logic: difficulty, requirement, reward, penalty.
- * This function is now asynchronous because it may fetch item data from the database.
- */
+
+
+// Hàm chính để tạo một task tự động hoàn chỉnh
 export async function calculateDailyTaskLogic(userId) {
     const pref = await UserPreference.findOne({ userId });
     if (!pref) throw new Error('Missing user preference');
@@ -321,7 +303,6 @@ export async function calculateDailyTaskLogic(userId) {
 
     const availableTime = decideAvailableTime(pref.availableTime, difficulty);
 
-    // 2️⃣ Determine requirement type (tapping, pomodoro, etc.)
     const requirement = decideRequirement(pref);
 
     const goal = randomGoal(pref.goals) || 'Phát triển bản thân';
@@ -331,7 +312,6 @@ export async function calculateDailyTaskLogic(userId) {
         availableTime
     );
 
-    // 3️⃣ Set up reward object with EXP and Gold
     const rewardConfig = REWARD_TABLE[difficulty] || {
         exp: { min: 0, max: 0 },
         gold: { min: 0, max: 0 },
@@ -342,10 +322,7 @@ export async function calculateDailyTaskLogic(userId) {
         items: [],
     };
 
-    // Determine allowed max item count for this difficulty from user preferences or defaults
     const defaultExtraCount = pref?.extraItemsCount?.[difficulty];
-    // If user preference not set for this difficulty, fall back to the default from schema (already applied via defaults),
-    // which for our schema covers all difficulties with values 1-8.
     const maxItems =
         defaultExtraCount !== undefined
             ? defaultExtraCount
@@ -354,45 +331,25 @@ export async function calculateDailyTaskLogic(userId) {
                   ? RANK_KEY_INDEX[difficulty] + 1
                   : KEY_TIERS.length
               : 1;
-    // ^ The above essentially defaults to the schema's default values (mortal=1,...creation=8).
-    // RANK_KEY_INDEX[difficulty] + 1 is just a fallback formula here but since schema defaults are set, pref.extraItemsCount[difficulty] should exist.
 
-    // If we ended up with something invalid, ensure at least 1
     const allowedItemCount = Math.max(1, maxItems);
 
-    // Determine how many items will drop (biased towards fewer items)
-    // Use linear weight distribution favoring fewer items: weight for 1 = allowedItemCount, for 2 = allowedItemCount-1, ..., for allowedItemCount = 1.
     const weights = [];
     for (let count = 1; count <= allowedItemCount; count++) {
         weights.push({ count, weight: allowedItemCount - count + 1 });
     }
     const dropCount = pickByWeight(weights).count;
-
-    // 4️⃣ Determine item rewards (either actual items or keys if no items available)
     const rankIndex = RANK_KEY_INDEX[difficulty];
-    let itemsList = []; // to accumulate reward items (could be item docs or objects with id and quantity)
-    // let useKeysFallback = false;
-
-    // Attempt to get at least one item of the task's rank tier
+    let itemsList = []; 
+    
     let primaryItems = await getItemsForTier(rankIndex, 1);
-    // if (primaryItems.length === 0) {
-    //     // No item of this tier (or any higher tier) exists, primaryItems will contain items from a lower tier or be empty if none exist down to white.
-    //     if (primaryItems.length === 0) {
-    //         useKeysFallback = true;
-    //         // If still empty, it means no extra items at all in any tier -> use keys as fallback reward
-    //     }
-    // }
-
-    // if (!useKeysFallback) {
-    // We have at least one item (or a few lower-tier items in exchange) for the first drop.
+    
     itemsList.push(...primaryItems);
-    // Determine additional items (dropCount - 1)
+    
     if (dropCount > 1) {
-        // Chance for each subsequent item to be of the same tier as task (rank tier) decreases with each item
         let chanceSameTier = 0.5; // 50% chance for second item to be same tier as task
         for (let i = 2; i <= dropCount; i++) {
-            let tierToFetch = rankIndex; // default to task's tier
-            // For highest difficulty (creation), always use black tier for all items (100% same tier, as creation tasks always drop highest tier items)
+            let tierToFetch = rankIndex;
             if (difficulty !== 'creation') {
                 if (Math.random() >= chanceSameTier) {
                     // Decide to drop a lower-tier item instead of same-tier
@@ -438,62 +395,6 @@ export async function calculateDailyTaskLogic(userId) {
                 : { itemId: `${tierName}_key`, quantity: 1 },
         );
     }
-
-    // }
-
-    // if (useKeysFallback) {
-    //     // Use keys as reward instead of items, with similar calculation logic
-    //     itemsList = []; // reset any partial items we might have added
-    //     const allowedKeys = ALLOWED_KEYS_COUNT[difficulty] || 1;
-    //     // Determine number of keys to drop (using similar weight distribution favoring fewer keys)
-    //     const keyWeights = [];
-    //     for (let count = 1; count <= allowedKeys; count++) {
-    //         keyWeights.push({ count, weight: allowedKeys - count + 1 });
-    //     }
-    //     const dropKeysCount = pickByWeight(keyWeights).count;
-
-    //     // Always ensure one key of the task's rank tier
-    //     const rankTierName = KEY_TIERS[rankIndex];
-    //     // Attempt to fetch the key item from DB if it exists
-    //     const rankKeyItem = await getRandomKeyByTier(userId, rankTierName);
-    //     if (!rankKeyItem) {
-    //         // If key not stored as an item, represent it as an object with id
-    //         rankKeyItem = { itemId: `${rankTierName}_key` };
-    //         /* Cần sửa lại chỗ này nên sửa thành dừng hẳn chương trình,
-    //         gửi yêu cầu cho người dùng tạo chìa khoá,
-    //         hoặc cho qua và cuối cùng khi chẳng có vật phẩm nào thì cho chuỗi rỗng */
-    //     }
-    //     itemsList.push(rankKeyItem);
-
-    //     if (dropKeysCount > 1) {
-    //         let chanceHighTier = 0.25; // 25% chance for second key to be one tier higher than rank
-    //         const highTierIndex =
-    //             rankIndex < KEY_TIERS.length - 1 ? rankIndex + 1 : rankIndex;
-    //         for (let i = 2; i <= dropKeysCount; i++) {
-    //             let keyTierIndex = rankIndex; // default drop rank-tier key
-    //             if (difficulty !== 'creation') {
-    //                 if (
-    //                     Math.random() < chanceHighTier &&
-    //                     highTierIndex > rankIndex
-    //                 ) {
-    //                     // Drop a higher-tier key (one tier above rank) with some probability
-    //                     keyTierIndex = highTierIndex;
-    //                 }
-    //                 chanceHighTier *= 0.5; // decrease chance for another high-tier key in subsequent drops
-    //             }
-    //             // Fetch the key item of the determined tier
-    //             const tierName = KEY_TIERS[keyTierIndex];
-    //             const keyItem = await getRandomKeyByTier(userId, tierName);
-    //             if (!keyItem) {
-    //                 keyItem = { itemId: `${tierName}_key` };
-    //                 /* Cần sửa lại chỗ này nên sửa thành dừng hẳn chương trình,
-    //                 gửi yêu cầu cho người dùng tạo chìa khoá,
-    //                 hoặc cho qua và cuối cùng khi chẳng có vật phẩm nào thì cho chuỗi rỗng */
-    //             }
-    //             itemsList.push(keyItem);
-    //         }
-    //     }
-    // }
 
     // Tạo vật phẩm key
     const keys = [];
@@ -594,3 +495,17 @@ export async function calculateDailyTaskLogic(userId) {
         penalty,
     };
 }
+
+// Các hàm không dùng tới nhưng có tiềm năng
+
+// function buildKeyDrop(rank) {
+//     const idx = RANK_KEY_INDEX[rank];
+
+//     const lowKey = KEY_TIERS[idx];
+//     const highKey = KEY_TIERS[Math.min(idx + 1, KEY_TIERS.length - 1)];
+
+//     return [
+//         { id: `${lowKey}_key`, weight: 75 }, // 3 phần
+//         { id: `${highKey}_key`, weight: 25 }, // 1 phần
+//     ];
+// }

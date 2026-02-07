@@ -9,6 +9,8 @@ import blockRoutes from './blockRoutes.js';
 import inventoryRoutes from './inventoryRoutes.js';
 import userPreferenceRoutes from './userPreferenceRoutes.js';
 import userScheduleRoutes from './userScheduleRoutes.js';
+import goalRoutes from './goalRotes.js';
+
 
 const router = express.Router();
 
@@ -22,5 +24,6 @@ router.use('/blocks', blockRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/user-preference', userPreferenceRoutes);
 router.use('/user-schedule', userScheduleRoutes);
+router.use('/goals', goalRoutes);
 
 export default router;
