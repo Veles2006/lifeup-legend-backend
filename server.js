@@ -15,7 +15,7 @@ app.use(express.json());
 // Kết nối DB
 connectDB();
 
-startDailyScheduler();
+// startDailyScheduler();
 // startRandomScheduler();
 
 app.get('/', (req, res) => {

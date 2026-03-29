@@ -19,6 +19,7 @@ const TaskSchema = new mongoose.Schema(
             type: String,
             enum: ['manual', 'recurring', 'daily', 'random', 'goal'],
             required: true,
+            default: 'manual'
         },
         source: {
             type: String,
@@ -27,7 +28,6 @@ const TaskSchema = new mongoose.Schema(
         },
         description: {
             type: String,
-            required: true,
         },
         requirement: {
             type: String,
@@ -37,6 +37,7 @@ const TaskSchema = new mongoose.Schema(
                 'timer_task',
                 'counting_app_time',
             ],
+            default: 'tap_to_complete',
             required: true,
         },
         reward: {
@@ -124,7 +125,7 @@ const TaskSchema = new mongoose.Schema(
             ],
             default: 'mortal',
         },
-        dateKey: { type: String, required: true },
+        dateKey: { type: String },
         spawnTime: { type: String },
     },
     { timestamps: true },

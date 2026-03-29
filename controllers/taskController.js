@@ -12,6 +12,59 @@ import Task from '../models/Task.js';
 //     }
 // };
 
+export const createTask = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const {
+            name,
+            type,
+            source,
+            description,
+            requirement,
+            reward,
+            penalty,
+            deadline,
+            date,
+            progress,
+            difficulty,
+        } = req.body;
+
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'Name is required' });
+        }
+
+        const task = new Task({
+            userId,
+            name: name.trim(),
+            type,
+            source,
+            description,
+            requirement,
+            difficulty,
+            reward,
+            penalty,
+            deadline,
+            date,
+            progress,
+        });
+
+        await task.save();
+        return res.status(201).json({
+            id: task._id,
+            name,
+            description,
+            difficulty,
+            reward,
+            penalty,
+            deadline,
+            date,
+            progress,
+        });
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
+    }
+};
+
 export const getTasksById = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -111,11 +164,9 @@ export const updateTaskStatus = async (req, res) => {
         if (!updatedTask) {
             await session.abortTransaction();
             session.endSession();
-            return res
-                .status(404)
-                .json({
-                    error: 'Không tìm thấy nhiệm vụ hoặc nhiệm vụ đã được hoàn thành trước đó',
-                });
+            return res.status(404).json({
+                error: 'Không tìm thấy nhiệm vụ hoặc nhiệm vụ đã được hoàn thành trước đó',
+            });
         }
 
         if (status === 'completed') {

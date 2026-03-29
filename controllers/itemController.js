@@ -6,7 +6,7 @@ export const getAllItems = async (req, res) => {
 
         const items = await Item.find({ userId }).populate(
             'keyInfo.blockId',
-            'appName packageName blockType'
+            '_id appName packageName blockType'
         );
 
         return res.json(items);
@@ -19,7 +19,7 @@ export const getItemById = async (req, res) => {
     try {
         const item = await Item.findById(req.params.id).populate(
             'keyInfo.blockId',
-            'appName packageName blockType'
+            '_id appName packageName blockType'
         );
 
         if (!item) {
